@@ -59,12 +59,13 @@ jobs:
 
       - name: Install Tailscale
         run: |
-          $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
+          $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-latest-amd64.msi"
           $installerPath = "$env:TEMP\tailscale.msi"
           
           Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
-          Start-Process msiexec.exe -ArgumentList "/i", ""$installerPath"", "/quiet", "/norestart" -Wait
+          Start-Process msiexec.exe -ArgumentList @("/i", $installerPath, "/quiet", "/norestart") -Wait
           Remove-Item $installerPath -Force
+
 
       - name: Establish Tailscale Connection
         run: |
@@ -85,10 +86,19 @@ jobs:
               exit 1
           }
           echo "TAILSCALE_IP=$tsIP" >> $env:GITHUB_ENV
+       - name: Show Available Drives
+  run: |
+    Get-PSDrive
+
+- name: Use D Drive for Extra Space
+  run: |
+    New-Item -Path "D:\RDPData" -ItemType Directory -Force
+    Write-Host "You can store files here, ~90GB available"
+
       
       - name: Verify RDP Accessibility
-        run: |
-          Write-Host "Tailscale IP: $env:TAILSCALE_IP"
+          run: |
+            Write-Host "Tailscale IP: $env:TAILSCALE_IP"
           
           # Test connectivity using Test-NetConnection against the Tailscale IP on port 3389
           $testResult = Test-NetConnection -ComputerName $env:TAILSCALE_IP -Port 3389
